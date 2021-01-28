@@ -150,7 +150,7 @@ function cityDetails(query){
          
          let cityName = $("<p>").addClass("title pb-3").text("Current conditions for " + JSON.parse(currentCityObj.city) + " on " + currentCityObj.date);
 
-         let iconSrc = "http://openweathermap.org/img/wn/" + currentCityObj.weather + "@2x.png";
+         let iconSrc = "https://openweathermap.org/img/wn/" + currentCityObj.weather + "@2x.png";
 
          let cityWeather = $("<p>").addClass("pb-3").append("<span class='has-text-white-ter'>" + (currentCityObj.weather_desc).toUpperCase() + "</span><br>").append("<img src=" + iconSrc + ">");
 
@@ -194,7 +194,7 @@ function cityDetails(query){
 
             let iterationDate = $("<p>").addClass("is-size-5 pb-3").text(currentCityObj.forecast[i].date);
 
-            let iterationIcon = $("<img>").addClass("pb-3").attr("src", "http://openweathermap.org/img/wn/" + currentCityObj.forecast[i].icon + "@2x.png")
+            let iterationIcon = $("<img>").addClass("pb-3").attr("src", "https://openweathermap.org/img/wn/" + currentCityObj.forecast[i].icon + "@2x.png")
             
             let iterationDesc = $("<p>").addClass("is-size-6 pb-3").text((currentCityObj.forecast[i].description).toUpperCase());
 
