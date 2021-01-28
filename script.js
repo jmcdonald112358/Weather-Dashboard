@@ -2,59 +2,9 @@
    //Fetch recent searches from local storage or create empty array to store a new search
    var recentSearchesArr = JSON.parse(localStorage.getItem("recentSearchesArr")) || [];
 
-   //Hardcoded currentCityObj for testing -- remove before submitting
-   // var currentCityObj = {
-   //    city: "Salt Lake City, Ut",
-   //    temp: "29",
-   //    humidity: "42%",
-   //    wind: "7 MPH",
-   //    uvi: "0",
-   //    forecast: [
-   //    {
-   //       date: "Jan 22, 2021",
-   //       temp_high: "45",
-   //       temp_low: "27",
-   //       humidity: "30%",
-   //       uvi: "3"
-   //    },
-   //    {
-   //       date: "Jan 23, 2021",
-   //       temp_high: "46",
-   //       temp_low: "28",
-   //       humidity: "31%",
-   //       uvi: "4"
-   //    },
-   //    {
-   //       date: "Jan 24, 2021",
-   //       temp_high: "47",
-   //       temp_low: "29",
-   //       humidity: "32%",
-   //       uvi: "6"
-   //    },
-   //    {
-   //       date: "Jan 25, 2021",
-   //       temp_high: "48",
-   //       temp_low: "30",
-   //       humidity: "33%",
-   //       uvi: "7"
-   //    },
-   //    {
-   //       date: "Jan 26, 2021",
-   //       temp_high: "49",
-   //       temp_low: "31",
-   //       humidity: "34%",
-   //       uvi: "9"
-   //    }
-   //    ]
-   // };
-
+   //Define empty object to hold relevant data received from API calls
    var currentCityObj = {};
 
-   //Log currentCityObj for reference -- remove before submitting
-   console.log(currentCityObj);
-
-   //Hardcoded forecast array of objects for testing
-   // var forecast = ;
 
 //Function to generate recent searches table
 function recentSearches(){
@@ -72,7 +22,7 @@ function recentSearches(){
    //Add list items
    for (let i = recentSearchesArr.length - 1; i >= 0; i--){
       let recentCity = recentSearchesArr[i];
-      let recentItem = $("<td>").text(recentCity);
+      let recentItem = $("<td>").addClass("is-clickable").attr("type", "button").attr("data-value", recentCity).text(recentCity);
       let recentRow = $("<tr>").attr("id", "recentCity").append(recentItem);
       $("tbody").append(recentRow);
    }
@@ -91,13 +41,19 @@ function recentSearches(){
       $("#searchCard").append(resetRecents);
    });
    
+   //Event listener for recent searches
+    $("td").click(function(event){
+       event.preventDefault();
+      let query = $(this).attr("data-value");
+      cityDetails(query);
+    });
+
 };
 
 //Generate list of recent searches if present
 if (recentSearchesArr.length > 0){
    recentSearches();
 }
-
 
 //Event listener for new search
 $("#submitSearch").click(function(event){
@@ -106,7 +62,7 @@ $("#submitSearch").click(function(event){
 
    //Store input to feed into function
    let searchQuery = $("#searchInput").val().trim();
-   recentSearchesArr.push(searchQuery); //push response from API name instead
+   recentSearchesArr.push(searchQuery);
    localStorage.setItem("recentSearchesArr", JSON.stringify(recentSearchesArr));
 
    //Reset search field
@@ -119,19 +75,6 @@ $("#submitSearch").click(function(event){
    $("#recentsList").remove();
    $("#clearRecent").remove();
    recentSearches();
-})
-
-
-//Event listener for recent search click 
-//****need to update recentsList items to be buttons for this to work****
-$("#recentCity").click(function(event){
-
-   //Get content of the cell to pipe into search function
-   event.preventDefault();
-   let recentQuery = $(this).val();
-
-   //Execute cityDetails function
-   cityDetails(recentQuery);
 })
 
 
@@ -154,7 +97,6 @@ function cityDetails(query){
       url: basicQueryURL,
       method: "GET"
    }).then(function(basicResponse){
-      console.log(basicResponse);
 
       //Store relevant lat/lon data from response to pipe into detailed function
       let cityLat = basicResponse.coord.lat;
@@ -162,7 +104,6 @@ function cityDetails(query){
 
       //Update currentCityObj with relevant response data
       currentCityObj.city = JSON.stringify(basicResponse.name);
-      console.log("After basic API: " + currentCityObj);
 
       // Get detailed city data
       let detailedQueryURL = "https://api.openweathermap.org/data/2.5/onecall?lat=" + cityLat + "&lon=" + cityLon + "&units=imperial&exclude=hourly&appid=744b8a1c38782a64532ea34b2848c13f";
@@ -171,9 +112,11 @@ function cityDetails(query){
          url: detailedQueryURL,
          method: "GET"
       }).then(function(detailedResponse){
-         console.log(detailedResponse);
 
          //Update currentCityObj with relevant response data   
+         currentCityObj.date = moment.unix(detailedResponse.current.dt).format("MMMM DD, YYYY");
+         currentCityObj.weather = detailedResponse.current.weather[0].icon;
+         currentCityObj.weather_desc = detailedResponse.current.weather[0].description;
          currentCityObj.temp = detailedResponse.current.temp +" *F";
          currentCityObj.feels_like = detailedResponse.current.feels_like + " *F";
          currentCityObj.humidity = detailedResponse.current.humidity + "%";
@@ -182,33 +125,20 @@ function cityDetails(query){
          currentCityObj.forecast = [];
 
          //Loop to create forecast objects and push into forecast array
-         for (i = 0; i < 5; i++) {
-            // let iterationDate = detailedResponse.daily.i.dt;
-            // let iterationTempHigh = detailedResponse.daily.i.temp.max + "F";
-            // let iterationTempLow = detailedResponse.daily.i.temp.min +"F";
-            // let iterationHumidity = detailedResponse.daily.i.humidity + "%";
-            // let iterationUVI = detailedResponse.daily.i.uvi;
-
-            // let iterationForecast = {
-            //    date: iterationDate,
-            //    temp_high: iterationTempHigh,
-            //    temp_low: iterationTempLow,
-            //    humidity: iterationHumidity,
-            //    uvi: iterationUVI
-            // }
+         for (i = 1; i < 6; i++) {
 
             let iterationForecast = {
-               date: moment.unix(detailedResponse.daily[i].dt).format("MMMM DD, YYYY"),
+               date: moment.unix(detailedResponse.daily[i].dt).format("MMM DD, YYYY"),
                temp_high: detailedResponse.daily[i].temp.max + " *F",
                temp_low: detailedResponse.daily[i].temp.min +" *F",
                humidity: detailedResponse.daily[i].humidity + "%",
-               uvi: detailedResponse.daily[i].uvi
+               uvi: detailedResponse.daily[i].uvi,
+               icon: detailedResponse.daily[i].weather[0].icon,
+               description: detailedResponse.daily[i].weather[0].description
             }
 
             currentCityObj.forecast.push(iterationForecast);
-            console.log(currentCityObj.forecast);
          }
-         console.log("After detailed API: " + currentCityObj);
 
          
          //Populate current conditions card
@@ -218,14 +148,23 @@ function cityDetails(query){
          let currentCondCont = $("<div>").addClass("card-content has-background-grey").attr("id", "currentConditions");
          $("#currentCondCard").append(currentCondCont);
          
-         let cityName = $("<p>").addClass("title pb-3").text("Current conditions for " + currentCityObj.city);
-         let cityTemp = $("<p>").addClass("subtitle").text("Temperature: " + currentCityObj.temp);
+         let cityName = $("<p>").addClass("title pb-3").text("Current conditions for " + JSON.parse(currentCityObj.city) + " on " + currentCityObj.date);
+
+         let iconSrc = "http://openweathermap.org/img/wn/" + currentCityObj.weather + "@2x.png";
+
+         let cityWeather = $("<p>").addClass("pb-3").append("<span class='has-text-white-ter'>" + (currentCityObj.weather_desc).toUpperCase() + "</span><br>").append("<img src=" + iconSrc + ">");
+
+         let cityTemp = $("<p>").addClass("subtitle").text("Temperature: " + currentCityObj.temp + " (Feels like: " + currentCityObj.feels_like + ")");
+
          let cityHum = $("<p>").addClass("subtitle").text("Humidity: " + currentCityObj.humidity);
+
          let cityWind = $("<p>").addClass("subtitle").text("Wind Speed: " + currentCityObj.wind);
+
          let cityUv = $("<p>").addClass("subtitle").text("UV Index: " + currentCityObj.uvi);
          
-         $("#currentConditions").append(cityName, cityTemp, cityHum, cityWind, cityUv);
+         $("#currentConditions").append(cityName, cityWeather, cityTemp, cityHum, cityWind, cityUv);
          
+
          // Populate forecast card
          let forecastLabel = $("<p>").addClass("title mt-6").text("5-day Forecast:");
          $("#cityDetails").append(forecastLabel);
@@ -254,18 +193,21 @@ function cityDetails(query){
             $("#" + iterationCard).append(forecastContent);
 
             let iterationDate = $("<p>").addClass("is-size-5 pb-3").text(currentCityObj.forecast[i].date);
-            //Forecast icon goes here
+
+            let iterationIcon = $("<img>").addClass("pb-3").attr("src", "http://openweathermap.org/img/wn/" + currentCityObj.forecast[i].icon + "@2x.png")
+            
+            let iterationDesc = $("<p>").addClass("is-size-6 pb-3").text((currentCityObj.forecast[i].description).toUpperCase());
+
             let iterationTempHigh = $("<p>").addClass("is-size-7 pb-3").text("High: " + currentCityObj.forecast[i].temp_high);
+
             let iterationTempLow = $("<p>").addClass("is-size-7 pb-3").text("Low: " + currentCityObj.forecast[i].temp_low);
+
             let iterationHumidity = $("<p>").addClass("is-size-7 pb-3").text("Humidity: " + currentCityObj.forecast[i].humidity);
+
             let iterationUVI = $("<p>").addClass("is-size-7").text("UV Index: " + currentCityObj.forecast[i].uvi);
 
-            $("#" + iterationContent).append(iterationDate, iterationTempHigh, iterationTempLow, iterationHumidity, iterationUVI);
+            $("#" + iterationContent).append(iterationDate, iterationIcon, iterationDesc, iterationTempHigh, iterationTempLow, iterationHumidity, iterationUVI);
          };
       });
    });
-
-   
 };
-
-// cityDetails();
